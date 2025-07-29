@@ -1,0 +1,32 @@
+# Example terraform.tfvars file
+# Copy this file to terraform.tfvars and customize the values
+
+# Required Variables
+instance_type = "t3.micro"
+
+# Optional - Instance Configuration
+# ami_id = "ami-0abcdef1234567890"  # Leave commented to use automatic OS selection
+operating_system = "amazon-linux-2"  # Options: amazon-linux-2, amazon-linux-2023, ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, rhel-8, rhel-9, centos-7, windows-2019, windows-2022
+key_name = "my-key-pair"
+monitoring = true
+
+# Optional - Networking
+# vpc_security_group_ids = ["sg-12345678"]
+# subnet_id = "subnet-12345678"
+associate_public_ip_address = true
+
+# Optional - Storage
+# root_block_device = {
+#   volume_type = "gp3"
+#   volume_size = 20
+#   encrypted   = true
+# }
+
+# Optional - Tags
+tags = {
+  Name        = "terraform-ec2-instance"
+  Environment = "development"
+  Project     = "terraform-aws-ec2-module"
+  Owner       = "your-name"
+  ManagedBy   = "terraform"
+}
