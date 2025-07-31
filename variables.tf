@@ -140,13 +140,13 @@ variable "instance_initiated_shutdown_behavior" {
 }
 
 variable "placement_group" {
-  description = "The Placement Group to start the instance in"
+  description = "The name of the placement group to launch the instance into"
   type        = string
   default     = null
 }
 
 variable "placement_partition_number" {
-  description = "The number of the partition the instance is in"
+  description = "The number of the partition the instance should launch into (1 to 7). Only valid when the placement group strategy is set to partition"
   type        = number
   default     = null
 }
