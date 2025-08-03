@@ -16,13 +16,39 @@ A comprehensive, production-ready Terraform module for creating AWS EC2 instance
 |------|---------|
 | aws | ~> 6.2.0 |
 
+## Resource Map
+
+```mermaid
+graph TD
+    A[Module: terraform-aws-ec2] --> B[aws_instance.this]
+    A --> C[aws_ami.this]
+    A --> D[aws_availability_zones.available]
+    
+    subgraph Core Resources
+        B --> E[Root Volume]
+        B --> F[EBS Volumes]
+        B --> G[Network Interface]
+    end
+    
+    subgraph Data Sources
+        C --> H[AMI Selection]
+        D --> I[AZ Selection]
+    end
+    
+    subgraph Integrations
+        B --> J[Security Groups]
+        B --> K[IAM Role]
+        B --> L[KMS Keys]
+    end
+```
+
 ## Resources
 
-| Name | Type |
-|------|------|
-| [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
-| [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
-| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
+| Name | Type | Description |
+|------|------|-------------|
+| [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource | Primary EC2 instance with enhanced security defaults |
+| [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source | Automatic AMI selection based on OS preference |
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source | AZ information for region-aware deployment |
 
 ## Features
 

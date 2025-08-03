@@ -2,6 +2,39 @@
 # This module provides comprehensive EC2 instance configuration with all available parameters
 # Default values are chosen for production readiness and security best practices
 
+locals {
+  base_tags = merge(
+    var.tags,
+    try(var.mandatory_tags, {}),
+    {
+      Environment     = var.environment
+      ManagedBy      = "terraform"
+      CreatedDate    = timestamp()
+      BackupEnabled  = try(var.instance_config.backup, true)
+      PatchGroup     = try(var.instance_config.patch_group, null)
+      ComplianceLevel = var.compliance_level
+    }
+  )
+
+  monitoring_enabled = coalesce(
+    try(var.monitoring_config.detailed_monitoring, null),
+    var.monitoring,
+    false
+  )
+
+  # AMI selection based on operating system
+  ami_filters = {
+    amazon-linux-2 = {
+      owners = ["amazon"]
+      filter = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    }
+    ubuntu-22-04 = {
+      owners = ["099720109477"]
+      filter = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    }
+  }
+}
+
 # Main EC2 Instance Resource with security hardening defaults
 resource "aws_instance" "this" {
   # Core Configuration
@@ -11,7 +44,7 @@ resource "aws_instance" "this" {
   # Security Configuration
   disable_api_termination = var.disable_api_termination
   iam_instance_profile   = var.iam_instance_profile
-  monitoring            = var.monitoring
+  monitoring            = local.monitoring_enabled
   
   # Network Configuration
   subnet_id                   = var.subnet_id
@@ -22,12 +55,107 @@ resource "aws_instance" "this" {
   ipv6_address_count        = var.ipv6_address_count
   ipv6_addresses            = var.ipv6_addresses
 
-  # Enhanced Security: IMDSv2 Required
+  # Instance Metadata Configuration
   metadata_options {
     http_endpoint               = "enabled"
-    http_tokens                 = "required"  # Enforce IMDSv2
+    http_tokens                 = var.compliance_level == "pci" ? "required" : try(var.metadata_options.http_tokens, "required")
     http_put_response_hop_limit = 1
     instance_metadata_tags      = "enabled"
+  }
+
+  # Root Block Device Configuration
+  root_block_device {
+    encrypted   = true
+    volume_type = try(var.root_block_device.volume_type, "gp3")
+    volume_size = try(var.root_block_device.volume_size, 20)
+    tags        = local.base_tags
+  }
+
+  # Tags
+  tags = merge(
+    local.base_tags,
+    var.instance_tags,
+    {
+      Name = coalesce(try(var.instance_tags["Name"], null), "ec2-${var.environment}")
+    }
+  )
+
+  # Lifecycle Rules
+  lifecycle {
+    precondition {
+      condition     = var.environment != "prod" || !can(regex("^t[0-9]\\.", var.instance_type))
+      error_message = "Production environment cannot use t-series instances"
+    }
+    
+    precondition {
+      condition     = var.compliance_level != "pci" || var.enable_encryption
+      error_message = "PCI compliance requires encryption to be enabled"
+    }
+  }
+
+  # Enhanced Security: IMDSv2 Required
+  dynamic "metadata_options" {
+    for_each = [1]  # Always create this block
+    content {
+      http_endpoint               = try(var.metadata_options.http_endpoint, "enabled")
+      http_tokens                 = var.compliance_level == "pci" ? "required" : try(var.metadata_options.http_tokens, "required")
+      http_put_response_hop_limit = try(var.metadata_options.http_put_response_hop_limit, 1)
+      instance_metadata_tags      = try(var.metadata_options.instance_metadata_tags, "enabled")
+  }
+
+  # Enhanced Lifecycle Management
+  lifecycle {
+    precondition {
+      condition     = var.environment != "prod" || !can(regex("^t[0-9]\\.", var.instance_type))
+      error_message = "Production environment cannot use t-series instances"
+    }
+    
+    precondition {
+      condition     = var.compliance_level != "pci" || var.enable_encryption
+      error_message = "PCI compliance requires encryption to be enabled"
+    }
+    
+    postcondition {
+      condition     = self.root_block_device[0].encrypted
+      error_message = "Root volume must be encrypted"
+    }
+  }
+
+  # Dynamic Tags
+  dynamic "tag_specifications" {
+    for_each = var.additional_resource_tags
+    content {
+      resource_type = tag_specifications.key
+      tags = merge(
+        tag_specifications.value,
+        var.mandatory_tags,
+        {
+          Environment  = var.environment
+          ManagedBy   = "terraform"
+          CreatedDate = timestamp()
+        }
+      )
+    }
+  }
+
+  # Enhanced Monitoring Setup
+  dynamic "monitoring" {
+    for_each = var.monitoring_config.detailed_monitoring ? [1] : []
+    content {
+      enabled = true
+    }
+  }
+
+  # Compliance-based Security Configuration
+  dynamic "metadata_options" {
+    for_each = var.compliance_level == "pci" ? [1] : []
+    content {
+      http_endpoint               = "enabled"
+      http_tokens                 = "required"
+      http_put_response_hop_limit = 1
+      instance_metadata_tags      = "enabled"
+    }
+  }
   }
 
   # Storage Configuration with encryption

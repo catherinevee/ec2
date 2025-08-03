@@ -1,3 +1,39 @@
+# Tagging and Resource Management
+variable "environment" {
+  description = "Environment name (e.g., dev, prod, staging)"
+  type        = string
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod"
+  }
+}
+
+variable "mandatory_tags" {
+  description = "Mandatory tags for all resources"
+  type = object({
+    Environment = string
+    Owner       = string
+    CostCenter  = string
+    Project     = string
+  })
+  validation {
+    condition     = can(regex("^[A-Za-z0-9-_ ]+$", var.mandatory_tags.CostCenter))
+    error_message = "CostCenter must contain only alphanumeric characters, hyphens, underscores, and spaces"
+  }
+}
+
+variable "instance_config" {
+  description = "Optional instance configuration settings"
+  type = object({
+    monitoring    = optional(bool, false)
+    ebs_optimized = optional(bool, true)
+    user_data     = optional(string)
+    backup        = optional(bool, true)
+    patch_group   = optional(string)
+  })
+  default = {}
+}
+
 # Required Variables
 variable "instance_type" {
   description = "The type of instance to start. Must be a valid EC2 instance type."
@@ -454,6 +490,12 @@ variable "tags" {
 variable "instance_tags" {
   description = "Additional tags for the instance"
   type        = map(string)
+  default     = {}
+}
+
+variable "additional_resource_tags" {
+  description = "Additional tags to apply to specific resource types"
+  type        = map(map(string))
   default     = {}
 }
 
