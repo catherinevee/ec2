@@ -2,6 +2,28 @@
 
 A comprehensive, production-ready Terraform module for creating AWS EC2 instances with best practices built-in.
 
+## Requirements
+
+| Name | Version |
+|------|---------|
+| terraform | >= 1.13.0 |
+| aws | ~> 6.2.0 |
+| terragrunt | 0.84.0 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| aws | ~> 6.2.0 |
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
+| [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
+
 ## Features
 
 - **Operating System Selection**: Choose from 10+ supported operating systems with automatic AMI discovery

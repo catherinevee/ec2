@@ -2,32 +2,48 @@
 # This module provides comprehensive EC2 instance configuration with all available parameters
 # Default values are chosen for production readiness and security best practices
 
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+# Main EC2 Instance Resource with security hardening defaults
+resource "aws_instance" "this" {
+  # Core Configuration
+  ami           = var.ami_id != null ? var.ami_id : data.aws_ami.this[0].id
+  instance_type = var.instance_type
+
+  # Security Configuration
+  disable_api_termination = var.disable_api_termination
+  iam_instance_profile   = var.iam_instance_profile
+  monitoring            = var.monitoring
+  
+  # Network Configuration
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids     = var.vpc_security_group_ids
+  associate_public_ip_address = var.associate_public_ip_address
+  private_ip                 = var.private_ip
+  secondary_private_ips      = var.secondary_private_ips
+  ipv6_address_count        = var.ipv6_address_count
+  ipv6_addresses            = var.ipv6_addresses
+
+  # Enhanced Security: IMDSv2 Required
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # Enforce IMDSv2
+    http_put_response_hop_limit = 1
+    instance_metadata_tags      = "enabled"
+  }
+
+  # Storage Configuration with encryption
+  dynamic "root_block_device" {
+    for_each = var.root_block_device != null ? [var.root_block_device] : []
+    content {
+      delete_on_termination = lookup(root_block_device.value, "delete_on_termination", true)
+      encrypted             = lookup(root_block_device.value, "encrypted", true)
+      iops                 = lookup(root_block_device.value, "iops", null)
+      kms_key_id           = lookup(root_block_device.value, "kms_key_id", null)
+      throughput           = lookup(root_block_device.value, "throughput", null)
+      volume_size          = lookup(root_block_device.value, "volume_size", null)
+      volume_type          = lookup(root_block_device.value, "volume_type", "gp3")
+      tags                = lookup(root_block_device.value, "tags", null)
     }
   }
-}
-
-# Operating system configuration mapping
-locals {
-  os_config = {
-    "amazon-linux-2" = {
-      owners      = ["amazon"]
-      name_filter = ["amzn2-ami-hvm-*-x86_64-gp2"]
-    }
-    "amazon-linux-2023" = {
-      owners      = ["amazon"]
-      name_filter = ["al2023-ami-*-x86_64"]
-    }
-    "ubuntu-20.04" = {
-      owners      = ["099720109477"] # Canonical
-      name_filter = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-    }
-    "ubuntu-22.04" = {
       owners      = ["099720109477"] # Canonical
       name_filter = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
     }

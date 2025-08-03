@@ -1,7 +1,8 @@
 # Required Variables
 variable "instance_type" {
-  description = "The type of instance to start"
+  description = "The type of instance to start. Must be a valid EC2 instance type."
   type        = string
+  nullable    = false
 
   validation {
     condition = can(regex("^[a-z][0-9][a-z]?\\.[a-z0-9]+$", var.instance_type))
@@ -11,21 +12,64 @@ variable "instance_type" {
 
 # Optional Variables - Instance Configuration
 variable "ami_id" {
-  description = "ID of AMI to use for the instance. If null, will use data source to find latest AMI"
+  description = "ID of AMI to use for the instance. If null, latest AMI will be discovered based on operating_system variable."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.ami_id == null ? true : can(regex("^ami-[a-f0-9]{17}$", var.ami_id))
+    error_message = "AMI ID must be null or a valid ami-* value."
+  }
 }
 
-variable "ami_owners" {
-  description = "List of AMI owners to limit search. Used when ami_id is null"
-  type        = list(string)
-  default     = ["amazon"]
+variable "operating_system" {
+  description = "Operating system for the EC2 instance. Automatically selects appropriate AMI when ami_id is null."
+  type        = string
+  default     = "amazon-linux-2"
+  nullable    = false
+
+  validation {
+    condition = contains([
+      "amazon-linux-2",
+      "amazon-linux-2023",
+      "ubuntu-20.04",
+      "ubuntu-22.04",
+      "ubuntu-24.04",
+      "rhel-8",
+      "rhel-9",
+      "centos-7",
+      "windows-2019",
+      "windows-2022"
+    ], var.operating_system)
+    error_message = "Must be a supported operating system. See README for valid values."
+  }
 }
 
-variable "ami_name_filter" {
-  description = "List of AMI name patterns to filter by. Used when ami_id is null"
+variable "vpc_security_group_ids" {
+  description = "A list of security group IDs to associate with the instance. At least one security group is required."
   type        = list(string)
-  default     = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  nullable    = false
+
+  validation {
+    condition     = length(var.vpc_security_group_ids) > 0
+    error_message = "At least one security group ID must be provided."
+  }
+
+  validation {
+    condition     = alltrue([for sg in var.vpc_security_group_ids : can(regex("^sg-[a-f0-9]{17}$", sg))])
+    error_message = "All security group IDs must be valid sg-* identifiers."
+  }
+}
+
+variable "subnet_id" {
+  description = "The VPC Subnet ID to launch the instance in."
+  type        = string
+  nullable    = false
+
+  validation {
+    condition     = can(regex("^subnet-[a-f0-9]{17}$", var.subnet_id))
+    error_message = "Subnet ID must be a valid subnet-* identifier."
+  }
 }
 
 variable "operating_system" {
