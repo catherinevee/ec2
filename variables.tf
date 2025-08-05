@@ -8,6 +8,16 @@ variable "environment" {
   }
 }
 
+variable "compliance_level" {
+  description = "Compliance level for the instance (e.g., pci, soc2, none)"
+  type        = string
+  default     = "none"
+  validation {
+    condition     = contains(["pci", "soc2", "none"], var.compliance_level)
+    error_message = "Compliance level must be one of: pci, soc2, none"
+  }
+}
+
 variable "mandatory_tags" {
   description = "Mandatory tags for all resources"
   type = object({
@@ -30,6 +40,14 @@ variable "instance_config" {
     user_data     = optional(string)
     backup        = optional(bool, true)
     patch_group   = optional(string)
+  })
+  default = {}
+}
+
+variable "monitoring_config" {
+  description = "Monitoring configuration settings"
+  type = object({
+    detailed_monitoring = optional(bool, false)
   })
   default = {}
 }

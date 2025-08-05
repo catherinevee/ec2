@@ -1,6 +1,6 @@
-# Terraform AWS EC2 Instance Module
+# AWS EC2 Instance Module
 
-A comprehensive, production-ready Terraform module for creating AWS EC2 instances with best practices built-in.
+Terraform module for provisioning AWS EC2 instances with security defaults and production configurations.
 
 ## Requirements
 
@@ -46,18 +46,17 @@ graph TD
 
 | Name | Type | Description |
 |------|------|-------------|
-| [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource | Primary EC2 instance with enhanced security defaults |
-| [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source | Automatic AMI selection based on OS preference |
+| [aws_instance.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource | EC2 instance with security defaults |
+| [aws_ami.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source | AMI selection based on OS preference |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source | AZ information for region-aware deployment |
 
 ## Features
 
-- **Operating System Selection**: Choose from 10+ supported operating systems with automatic AMI discovery
-- **Security First**: Encryption enabled by default, IMDSv2 required, configurable security groups
+- **OS Selection**: Automatic AMI discovery for 10+ operating systems
+- **Security Defaults**: Encryption enabled, IMDSv2 required, configurable security groups
 - **Flexible Configuration**: Support for all EC2 instance parameters and block devices
-- **Best Practices**: Provider version locking, input validation, comprehensive tagging
 - **Production Ready**: Termination protection, monitoring, IAM integration
-- **Well Documented**: Complete examples and clear variable descriptions
+- **Compliance**: PCI-DSS and SOC2 compliance configurations available
 
 ## Usage
 
@@ -92,7 +91,7 @@ module "ec2_instance" {
 }
 ```
 
-### Advanced Example
+### Production Example
 
 ```hcl
 module "web_server" {

@@ -1,6 +1,6 @@
 # Development Guide
 
-This document provides guidance for developers working with the AWS EC2 module.
+Guidance for developers working with the AWS EC2 module.
 
 ## Prerequisites
 
